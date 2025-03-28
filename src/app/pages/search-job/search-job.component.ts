@@ -1,9 +1,12 @@
-import { Component, OnInit, TemplateRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, TemplateRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DropdownComponent } from '../../elements/dropdown/dropdown.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
-import { SearchJobService } from './search-job.service';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { Job, SearchJobService } from './search-job.service';
+import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
+import { catchError, finalize, of, Subject, tap } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { JsonPipe } from '@angular/common';
 
 interface type {
   title: string,
@@ -19,7 +22,8 @@ interface type {
   imports: [
     RouterLink,
     DropdownComponent,
-    HttpClientModule
+    HttpClientModule,
+    JsonPipe
   ],
   providers: [
     SearchJobService
@@ -27,7 +31,9 @@ interface type {
   templateUrl: './search-job.component.html',
   styleUrl: './search-job.component.css'
 })
-export class SearchJobComponent implements OnInit {
+export class SearchJobComponent implements OnInit, OnDestroy {
+
+  private unsubscribe$ = new Subject<void>(); // For takeUntil
 
   constructor(
     private searchJobService: SearchJobService,
@@ -36,14 +42,37 @@ export class SearchJobComponent implements OnInit {
 
   ngOnInit() {
     console.log("ngOnInit() {...");
-    this.searchJobService.getAllJobs().subscribe({
-      next(jobs) {
+
+    this.searchJobService.getAllJobs().pipe(
+      takeUntil(this.unsubscribe$),
+      catchError((error: HttpErrorResponse) => {
+        console.error('Job fetch error:', error);
+        return of(null);
+      }),
+      finalize(() => {
+        // this.isLoading = false;
+      }),
+      tap((jobs: any) => {
+        // if (jobs) {
+          // this.jobs = jobs;
+        // }
+        this.myJobs = jobs;
+      })
+    ).subscribe({
+      next(jobs: any) {
         console.log('Current jobs: ', jobs);
       },
       error(msg) {
         console.log('Error Getting jobs: ', msg);
       }
-    })
+    });
+  }
+
+  myJobs: Job[] = [] as Job[];
+
+  ngOnDestroy() {
+    this.unsubscribe$.next();
+    this.unsubscribe$.complete();
   }
 
   openCenter(content: TemplateRef<any>) {
