@@ -1,7 +1,9 @@
-import { Component, TemplateRef } from '@angular/core';
+import { Component, OnInit, TemplateRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DropdownComponent } from '../../elements/dropdown/dropdown.component';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { SearchJobService } from './search-job.service';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 interface type {
   title: string,
@@ -16,14 +18,33 @@ interface type {
   standalone: true,
   imports: [
     RouterLink,
-    DropdownComponent
+    DropdownComponent,
+    HttpClientModule
+  ],
+  providers: [
+    SearchJobService
   ],
   templateUrl: './search-job.component.html',
   styleUrl: './search-job.component.css'
 })
-export class SearchJobComponent {
+export class SearchJobComponent implements OnInit {
 
-  constructor(private modalService: NgbModal) { }
+  constructor(
+    private searchJobService: SearchJobService,
+    private modalService: NgbModal
+  ) { }
+
+  ngOnInit() {
+    console.log("ngOnInit() {...");
+    this.searchJobService.getAllJobs().subscribe({
+      next(jobs) {
+        console.log('Current jobs: ', jobs);
+      },
+      error(msg) {
+        console.log('Error Getting jobs: ', msg);
+      }
+    })
+  }
 
   openCenter(content: TemplateRef<any>) {
     this.modalService.open(content, { centered: true });
