@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { catchError, Observable, of } from 'rxjs';
+import { type } from '../cms/content/content.component';
+import { Title } from 'chart.js';
 // import { Job } from '../interfaces/job.interface';
 // import { LocalStorageService } from '../_oautch/_services/localstorage.service';
 // import { CookieService } from '../_oautch/_services/cookie.service';
@@ -8,9 +10,13 @@ import { catchError, Observable, of } from 'rxjs';
 const API_URL = 'http://localhost:3000/api/jobs'; // Change this to your backend API URL
 
 export interface Job {
-  id?: any,
+  id:number,
   title: string,
-  description: string,
+  company: string,
+  companylogo?: string,
+  salary: string,
+  location: string,
+  url: string,
 }
 
 @Injectable({
@@ -31,7 +37,25 @@ export class SearchJobService {
     // return of([] as Job[]);
   }
 
-
+  createJob(job: Job): Observable<Job> {
+    return this.http.post<Job>(`${API_URL}`, job);
+  }
+  
+  deleteJob(delID: number): Observable<any> {
+    return this.http.delete<any>(`${API_URL}`, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: { id: delID }, // Send delID in the request body
+    });
+  }
+  editJob(editedJob: Job): Observable<any> {
+    return this.http.put<any>(`${API_URL}`, 
+      { id: editedJob.id, title: editedJob.title, company: editedJob.company, location: editedJob.location, salary: editedJob.salary }, 
+      { headers: { 'Content-Type': 'application/json' } } // Move headers here
+    );
+  }
+  
   // // Helper function to get headers with token
   // private getAuthHeaders(): HttpHeaders {
   //   const token = this.cookieService.getLocalToken(); // Assuming you store token in local storage

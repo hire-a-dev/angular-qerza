@@ -1,7 +1,12 @@
-import { Pool } from 'pg';
+import sqlite3 from 'sqlite3';
+import { open, Database } from 'sqlite';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Function to connect to SQLite database
+async function connectDB(): Promise<Database<sqlite3.Database, sqlite3.Statement>> {
+  return await open({
+    filename: "MD_database.db",
+    driver: sqlite3.Database, // Uses sqlite3 driver
+  });
+}
 
-export default pool;
+export default connectDB;
